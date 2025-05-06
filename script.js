@@ -1,41 +1,8 @@
-const tiendas = [
-  { nombre: "TD Camarena", cp: "28047", lat: 40.387, lng: -3.751 },
-  { nombre: "TD Torrijos", cp: "45500", lat: 39.983, lng: -4.283 },
-  { nombre: "FQ C.C. Valdemoro", cp: "28340", lat: 40.19, lng: -3.673 },
-  { nombre: "FQ Carreteria", cp: "16003", lat: 40.07, lng: -2.13 },
-  { nombre: "FQ CC EL VENTANAL", cp: "28770", lat: 40.662, lng: -3.689 },
-  { nombre: "FQ Fuencarral", cp: "28010", lat: 40.432, lng: -3.702 },
-  { nombre: "FQ Mostoles", cp: "28931", lat: 40.322, lng: -3.865 },
-  { nombre: "FQ Pedro Laborde", cp: "28038", lat: 40.388, lng: -3.653 },
-  { nombre: "FQ PLAZA RIO", cp: "28026", lat: 40.389, lng: -3.703 },
-  { nombre: "FQ PINTO CC EBOLI", cp: "28320", lat: 40.24, lng: -3.699 },
-  { nombre: "FQ SECTOR 3 CC", cp: "28950", lat: 40.324, lng: -3.731 },
-  { nombre: "TD Acacias", cp: "28005", lat: 40.406, lng: -3.713 },
-  { nombre: "TD Alberto Palacios", cp: "28021", lat: 40.344, lng: -3.707 },
-  { nombre: "TD C.C. El Parque", cp: "13005", lat: 38.984, lng: -3.931 },
-  { nombre: "TD Coslada", cp: "28821", lat: 40.426, lng: -3.557 },
-  { nombre: "TD Francos Rodriguez", cp: "28039", lat: 40.454, lng: -3.716 },
-  { nombre: "TD Fuensalida", cp: "45510", lat: 40.024, lng: -4.258 },
-  { nombre: "TD Mejorada", cp: "28840", lat: 40.388, lng: -3.482 },
-  { nombre: "TD Pozuelo", cp: "28224", lat: 40.434, lng: -3.811 },
-  { nombre: "TD Sahara", cp: "28041", lat: 40.362, lng: -3.683 }
-];
-
-const map = L.map('map').setView([40.4168, -3.7038], 6);
+let tiendas = [];
+let map = L.map('map').setView([40.4168, -3.7038], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
-
-tiendas.forEach(t => {
-  L.marker([t.lat, t.lng], {
-    title: t.nombre,
-    icon: L.icon({
-      iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
-      iconSize: [32, 32],
-      iconAnchor: [16, 32]
-    })
-  }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
-});
 
 let clienteMarker = null;
 let lineaRuta = null;
@@ -46,6 +13,61 @@ let nifs = [];
 let nifsFiltrados = [];
 let planesUnicos = [];
 let currentNifIndex = 0;
+
+async function cargarTiendas() {
+  try {
+    const response = await fetch('pruebabase_procesado.csv');
+    const text = await response.text();
+    tiendas = Papa.parse(text, { header: true, skipEmptyLines: true }).data;
+    console.log('Tiendas cargadas desde CSV:', tiendas);
+
+    tiendas.forEach(t => {
+      L.marker([parseFloat(t.lat), parseFloat(t.lng)], {
+        title: t.nombre,
+        icon: L.icon({
+          iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32]
+        })
+      }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
+    });
+  } catch (error) {
+    console.error('Error al cargar pruebabase_procesado.csv, usando datos de prueba:', error);
+    tiendas = [
+      { nombre: "TD Camarena", cp: "28047", lat: 40.387, lng: -3.751 },
+      { nombre: "TD Torrijos", cp: "45500", lat: 39.983, lng: -4.283 },
+      { nombre: "FQ C.C. Valdemoro", cp: "28340", lat: 40.19, lng: -3.673 },
+      { nombre: "FQ Carreteria", cp: "16003", lat: 40.07, lng: -2.13 },
+      { nombre: "FQ CC EL VENTANAL", cp: "28770", lat: 40.662, lng: -3.689 },
+      { nombre: "FQ Fuencarral", cp: "28010", lat: 40.432, lng: -3.702 },
+      { nombre: "FQ Mostoles", cp: "28931", lat: 40.322, lng: -3.865 },
+      { nombre: "FQ Pedro Laborde", cp: "28038", lat: 40.388, lng: -3.653 },
+      { nombre: "FQ PLAZA RIO", cp: "28026", lat: 40.389, lng: -3.703 },
+      { nombre: "FQ PINTO CC EBOLI", cp: "28320", lat: 40.24, lng: -3.699 },
+      { nombre: "FQ SECTOR 3 CC", cp: "28950", lat: 40.324, lng: -3.731 },
+      { nombre: "TD Acacias", cp: "28005", lat: 40.406, lng: -3.713 },
+      { nombre: "TD Alberto Palacios", cp: "28021", lat: 40.344, lng: -3.707 },
+      { nombre: "TD C.C. El Parque", cp: "13005", lat: 38.984, lng: -3.931 },
+      { nombre: "TD Coslada", cp: "28821", lat: 40.426, lng: -3.557 },
+      { nombre: "TD Francos Rodriguez", cp: "28039", lat: 40.454, lng: -3.716 },
+      { nombre: "TD Fuensalida", cp: "45510", lat: 40.024, lng: -4.258 },
+      { nombre: "TD Mejorada", cp: "28840", lat: 40.388, lng: -3.482 },
+      { nombre: "TD Pozuelo", cp: "28224", lat: 40.434, lng: -3.811 },
+      { nombre: "TD Sahara", cp: "28041", lat: 40.362, lng: -3.683 }
+    ];
+
+    tiendas.forEach(t => {
+      L.marker([t.lat, t.lng], {
+        title: t.nombre,
+        icon: L.icon({
+          iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+          iconSize: [32, 32],
+          iconAnchor: [16, 32]
+        })
+      }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
+    });
+  }
+}
 
 async function cargarNifs() {
   try {
@@ -368,7 +390,7 @@ async function cargarDatos(nif) {
       tiendaCercana = tiendas
         .map(t => ({
           ...t,
-          distancia: calcularDistancia(lat, lon, t.lat, t.lng)
+          distancia: calcularDistancia(lat, lon, parseFloat(t.lat), parseFloat(t.lng))
         }))
         .sort((a, b) => a.distancia - b.distancia)[0];
 
@@ -389,7 +411,7 @@ async function cargarDatos(nif) {
         .on('mouseover', function () { this.openPopup(); })
         .on('mouseout', function () { this.closePopup(); });
 
-      lineaRuta = L.polyline([[lat, lon], [tiendaCercana.lat, tiendaCercana.lng]], {
+      lineaRuta = L.polyline([[lat, lon], [parseFloat(tiendaCercana.lat), parseFloat(tiendaCercana.lng)]], {
         color: '#0077cc',
         weight: 3,
         dashArray: '5,5'
@@ -594,7 +616,6 @@ async function cargarDatos(nif) {
           finalTotalDiv.textContent = `💶 Total con cargos adicionales: ${totalInicial.toFixed(2)} €`;
           seccion.appendChild(finalTotalDiv);
 
-          // Asegurar que el botón esté en el DOM antes de asignar el evento
           const checkButton = () => {
             const calculateButton = document.getElementById("calcularTotalBtn");
             if (calculateButton) {
@@ -604,7 +625,7 @@ async function cargarDatos(nif) {
               });
             } else {
               console.error("Botón 'calcularTotalBtn' no encontrado en el DOM, reintentando...");
-              setTimeout(checkButton, 100); // Reintentar después de 100ms
+              setTimeout(checkButton, 100);
             }
           };
           checkButton();
@@ -749,7 +770,7 @@ async function cargarDatos(nif) {
                       <strong class="descriptor">📝 Motivo:</strong> ${comp.motivo || "Sin motivo"}<br>
                       <strong class="descriptor">⏳ Periodo:</strong> ${comp.f_inicio || "?"} → ${comp.f_fin || "?"}<br>
                       <strong class="descriptor">📆 Duración:</strong> ${comp.duracion || "-"}<br>
-                      <strong class="descriptor">📄 Resumen:</strong> ${comp.resumen || "-"}
+                      <strong class="descriptor">📄 Resan:</strong> ${comp.resumen || "-"}
                     `;
                     compromisoBox.appendChild(compromisoDetalle);
 
@@ -905,4 +926,5 @@ function actualizarFechaHora() {
 setInterval(actualizarFechaHora, 1000);
 actualizarFechaHora();
 
+cargarTiendas();
 cargarNifs();
