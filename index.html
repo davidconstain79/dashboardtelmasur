@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Telmasur - Orange</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+</head>
+<body>
+  <div style="display: flex; justify-content: space-between; align-items: center;">
+    <div>
+      <h1 style="margin: 0;">Dashboard Telmasur - Orange</h1>
+      <div id="fechaHoraActual" style="font-size: 16px; font-weight: bold; color: #555; margin-top: 4px;"></div>
+    </div>
+    <img src="https://sp-ao.shortpixel.ai/client/to_webp,q_glossy,ret_img/https://www.telmasur.com/wp-content/uploads/2024/03/Telmasur_Logo.png" 
+         alt="Telmasur Logo" 
+         style="height: 200px; max-width: 720px;" />
+  </div>
+
+ <div class="nif-navigation">
+  <button id="prevNifBtn" class="nif-btn">Anterior</button>
+  <input list="nifList" id="nifInput" placeholder="Escribe o selecciona un NIF">
+  <datalist id="nifList"></datalist>
+  <button id="nextNifBtn" class="nif-btn">Siguiente</button>
+</div>
+
+<div class="nif-navigation">
+  <input id="idSearch" placeholder="Buscar x Telefono" style="padding: 5px; font-size: 16px; width: 220px;" />
+  <button onclick="buscarIdEnServicios()" class="nif-btn">🔍 Buscar ID</button>
+</div>
+
+<div class="nif-navigation">
+  <label for="planFilter">Filtrar por Plan:</label>
+  <select id="planFilter">
+    <option value="">Todos los planes</option>
+  </select>
+</div>
+
+<div id="idSearchResultado" style="margin-top: 10px; font-size: 16px; color: #333;"></div>
+
+  <div id="tipoSection" class="tipo-section"></div>
+  <div class="map-container">
+    <div id="clienteInfo" class="cliente-info">
+      <div class="cliente-card" id="clienteCard"></div>
+    </div>
+    <div class="map-wrapper">
+      <div id="map"></div>
+      <div id="mapDetails" class="map-details detalle"></div>
+    </div>
+  </div>
+  <div id="output">Cargando información...</div>
+
+  <script src="script.js"></script>
+</body>
+</html>

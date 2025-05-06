@@ -1,0 +1,225 @@
+body { font-family: Arial, sans-serif; margin: 20px; }
+#map { 
+  height: 337.5px; 
+  border-radius: 8px; 
+  border: 1px solid #ccc; 
+  width: 100%;
+}
+#nifInput { 
+  margin-top: 15px; 
+  font-size: 16px; 
+  padding: 5px; 
+  width: 200px;
+}
+canvas { max-width: 100%; margin-top: 10px; }
+.detalle { font-size: 14px; margin-top: 10px; color: #333; }
+.cliente-info { 
+  font-size: 20px; 
+  color: #333; 
+  padding-right: 20px; 
+  flex: 1; 
+  line-height: 1.5; 
+}
+.cliente-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  background: #fefefe;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
+}
+.cliente-info strong { color: #ff6600; }
+.tipo-section { 
+  font-size: 28px; 
+  font-weight: bold; 
+  color: #ff6600; 
+  margin: 20px 0; 
+}
+.map-container {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 20px;
+}
+.map-wrapper {
+  flex: 1;
+  max-width: 50%;
+}
+.map-details {
+  margin-top: 10px;
+}
+.servicio-card {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fefefe;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.servicio-card strong {
+  grid-column: 1 / -1;
+  font-size: 16px;
+  color: #ff6600;
+}
+.badge {
+  background: #007bff;
+  color: #fff;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-left: 8px;
+}
+.numero-grande { font-size: 20px; font-weight: bold; color: #000; }
+.copy-btn { cursor: pointer; border: none; background: none; font-size: 14px; margin-left: 4px; }
+.extras-box {
+  border: 1px solid #ffa94d;
+  border-radius: 6px;
+  padding: 8px;
+  margin-top: 10px;
+  background: #fff4e6;
+  grid-column: 1 / -1;
+}
+.extras-box .detalle { font-size: 16px; font-weight: normal; color: #000; }
+.servicio-card .detalle strong.descriptor {
+  color: #ff6600; 
+  font-weight: bold;
+}
+.factura-nodo { margin-left: 16px; }
+.factura-nodo-header {
+  cursor: pointer;
+  padding: 4px;
+}
+.factura-nodo-header.nivel-0,
+.factura-nodo-header.nivel-1 {
+  background-color: #eee;
+  font-weight: bold;
+}
+.chevron { margin-right: 6px; display: inline-block; }
+.factura-children {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+}
+.factura-children.open { max-height: 1000px; }
+.btn-toggle {
+  margin: 10px 0;
+  padding: 5px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.nif-navigation {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+}
+.nif-btn {
+  padding: 5px 10px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #ffa500;
+  color: black;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+}
+.nif-btn:hover {
+  background-color: #ff8c00;
+  transform: scale(1.05);
+}
+.nif-btn:active {
+  transform: scale(0.95);
+  background-color: #e07b00;
+}
+.nif-btn:disabled {
+  background-color: #ccc;
+  color: black;
+  font-weight: bold;
+  cursor: not-allowed;
+  transform: none;
+}
+#output {
+  font-size: 14px;
+  color: #666;
+  margin-top: 20px;
+}
+/* Estilos para el filtro de plan */
+#planFilter {
+  padding: 5px;
+  font-size: 16px;
+  width: 200px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.nif-navigation label {
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  margin-right: 10px;
+}
+
+/* Highlighting for Renove values */
+.renove-highlight {
+  font-weight: bold;
+  font-size: 18px;
+  color: #000;
+  background-color: #ffebcc;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* Highlighting for Descuentos values */
+.descuento-highlight {
+  font-weight: bold;
+  font-size: 18px;
+  color: #000;
+  background-color: #e6f3ff;
+  padding: 2px 4px;
+  border-radius: 4px;
+}
+
+/* Styling for the Renove summary card */
+.resumen-renove-card {
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  background: #fefefe;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.resumen-renove-card strong {
+  font-size: 16px;
+  color: #ff6600;
+  display: block;
+  margin-bottom: 10px;
+}
+
+/* Styling for the Valor incluido input */
+.valor-incluido {
+  margin-top: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.valor-incluido label {
+  font-size: 14px;
+  color: #333;
+}
+.valor-incluido label strong {
+  color: #ff6600;
+}
+.valor-incluido input {
+  padding: 5px;
+  font-size: 14px;
+  width: 100px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
