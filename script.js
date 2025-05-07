@@ -1,8 +1,41 @@
-let tiendas = [];
-let map = L.map('map').setView([40.4168, -3.7038], 6);
+const tiendas = [
+  { nombre: "TD Camarena", cp: "28047", lat: 40.387, lng: -3.751 },
+  { nombre: "TD Torrijos", cp: "45500", lat: 39.983, lng: -4.283 },
+  { nombre: "FQ C.C. Valdemoro", cp: "28340", lat: 40.19, lng: -3.673 },
+  { nombre: "FQ Carreteria", cp: "16003", lat: 40.07, lng: -2.13 },
+  { nombre: "FQ CC EL VENTANAL", cp: "28770", lat: 40.662, lng: -3.689 },
+  { nombre: "FQ Fuencarral", cp: "28010", lat: 40.432, lng: -3.702 },
+  { nombre: "FQ Mostoles", cp: "28931", lat: 40.322, lng: -3.865 },
+  { nombre: "FQ Pedro Laborde", cp: "28038", lat: 40.388, lng: -3.653 },
+  { nombre: "FQ PLAZA RIO", cp: "28026", lat: 40.389, lng: -3.703 },
+  { nombre: "FQ PINTO CC EBOLI", cp: "28320", lat: 40.24, lng: -3.699 },
+  { nombre: "FQ SECTOR 3 CC", cp: "28950", lat: 40.324, lng: -3.731 },
+  { nombre: "TD Acacias", cp: "28005", lat: 40.406, lng: -3.713 },
+  { nombre: "TD Alberto Palacios", cp: "28021", lat: 40.344, lng: -3.707 },
+  { nombre: "TD C.C. El Parque", cp: "13005", lat: 38.984, lng: -3.931 },
+  { nombre: "TD Coslada", cp: "28821", lat: 40.426, lng: -3.557 },
+  { nombre: "TD Francos Rodriguez", cp: "28039", lat: 40.454, lng: -3.716 },
+  { nombre: "TD Fuensalida", cp: "45510", lat: 40.024, lng: -4.258 },
+  { nombre: "TD Mejorada", cp: "28840", lat: 40.388, lng: -3.482 },
+  { nombre: "TD Pozuelo", cp: "28224", lat: 40.434, lng: -3.811 },
+  { nombre: "TD Sahara", cp: "28041", lat: 40.362, lng: -3.683 }
+];
+
+const map = L.map('map').setView([40.4168, -3.7038], 6);
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
   attribution: '© OpenStreetMap contributors'
 }).addTo(map);
+
+tiendas.forEach(t => {
+  L.marker([t.lat, t.lng], {
+    title: t.nombre,
+    icon: L.icon({
+      iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+      iconSize: [32, 32],
+      iconAnchor: [16, 32]
+    })
+  }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
+});
 
 let clienteMarker = null;
 let lineaRuta = null;
@@ -14,80 +47,14 @@ let nifsFiltrados = [];
 let planesUnicos = [];
 let currentNifIndex = 0;
 
-async function cargarTiendas() {
-  try {
-    const response = await fetch('pruebabase_procesado.csv');
-    const text = await response.text();
-    tiendas = Papa.parse(text, { 
-      header: true, 
-      skipEmptyLines: true,
-      delimiter: ";" 
-    }).data;
-    console.log('Tiendas cargadas desde CSV:', tiendas);
-
-    tiendas.forEach(t => {
-      const lat = parseFloat(t.lat);
-      const lng = parseFloat(t.lng);
-      if (isNaN(lat) || isNaN(lng)) {
-        console.warn(`Tienda ${t.nombre} tiene coordenadas inválidas (lat: ${t.lat}, lng: ${t.lng}). Se omite.`);
-        return;
-      }
-      L.marker([lat, lng], {
-        title: t.nombre,
-        icon: L.icon({
-          iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32]
-        })
-      }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
-    });
-  } catch (error) {
-    console.error('Error al cargar pruebabase_procesado.csv, usando datos de prueba:', error);
-    tiendas = [
-      { nombre: "TD Camarena", cp: "28047", lat: 40.387, lng: -3.751 },
-      { nombre: "TD Torrijos", cp: "45500", lat: 39.983, lng: -4.283 },
-      { nombre: "FQ C.C. Valdemoro", cp: "28340", lat: 40.19, lng: -3.673 },
-      { nombre: "FQ Carreteria", cp: "16003", lat: 40.07, lng: -2.13 },
-      { nombre: "FQ CC EL VENTANAL", cp: "28770", lat: 40.662, lng: -3.689 },
-      { nombre: "FQ Fuencarral", cp: "28010", lat: 40.432, lng: -3.702 },
-      { nombre: "FQ Mostoles", cp: "28931", lat: 40.322, lng: -3.865 },
-      { nombre: "FQ Pedro Laborde", cp: "28038", lat: 40.388, lng: -3.653 },
-      { nombre: "FQ PLAZA RIO", cp: "28026", lat: 40.389, lng: -3.703 },
-      { nombre: "FQ PINTO CC EBOLI", cp: "28320", lat: 40.24, lng: -3.699 },
-      { nombre: "FQ SECTOR 3 CC", cp: "28950", lat: 40.324, lng: -3.731 },
-      { nombre: "TD Acacias", cp: "28005", lat: 40.406, lng: -3.713 },
-      { nombre: "TD Alberto Palacios", cp: "28021", lat: 40.344, lng: -3.707 },
-      { nombre: "TD C.C. El Parque", cp: "13005", lat: 38.984, lng: -3.931 },
-      { nombre: "TD Coslada", cp: "28821", lat: 40.426, lng: -3.557 },
-      { nombre: "TD Francos Rodriguez", cp: "28039", lat: 40.454, lng: -3.716 },
-      { nombre: "TD Fuensalida", cp: "45510", lat: 40.024, lng: -4.258 },
-      { nombre: "TD Mejorada", cp: "28840", lat: 40.388, lng: -3.482 },
-      { nombre: "TD Pozuelo", cp: "28224", lat: 40.434, lng: -3.811 },
-      { nombre: "TD Sahara", cp: "28041", lat: 40.362, lng: -3.683 }
-    ];
-
-    tiendas.forEach(t => {
-      L.marker([t.lat, t.lng], {
-        title: t.nombre,
-        icon: L.icon({
-          iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32]
-        })
-      }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
-    });
-  }
-}
-
 async function cargarNifs() {
   try {
     const response = await fetch('/nifs');
-    if (!response.ok) throw new Error(`Error al cargar NIFs: ${response.status}`);
+    if (!response.ok) throw new Error('Error al cargar NIFs');
     nifs = await response.json();
     console.log('NIFs cargados:', nifs);
   } catch (error) {
     console.error('Error al cargar NIFs, usando datos de prueba:', error);
-    document.getElementById('output').textContent = `No se pudo conectar con el servidor para cargar NIFs. Usando datos de prueba. Detalle: ${error.message}`;
     nifs = ["619156757", "679735826", "663579369"];
   }
 
@@ -200,7 +167,6 @@ async function cargarPlanesUnicos() {
 
   if (errorCount === nifs.length) {
     console.error('No se pudieron cargar planes de ningún NIF. Usando datos de prueba para planes.');
-    document.getElementById('output').textContent = 'No se pudo conectar con el servidor para cargar planes. Usando datos de prueba.';
     planesUnicos = ["Love Empresa Activa", "Love FUTbol 2", "Fibra con 1 Línea", "Love TOTAL 4"];
   }
 
@@ -312,22 +278,18 @@ async function cargarDatos(nif) {
   let datos;
   try {
     const response = await fetch(`/data/${nif}`);
-    if (!response.ok) {
-      console.warn(`No se pudo cargar datos para NIF ${nif}: ${response.status}`);
-      throw new Error(`Error al cargar datos: ${response.status}`);
-    }
+    if (!response.ok) throw new Error('Error al cargar datos');
     datos = await response.json();
     console.log(`Datos cargados para NIF ${nif}:`, datos);
   } catch (error) {
-    console.error(`Error al cargar datos para NIF ${nif}, usando datos de prueba:`, error);
-    document.getElementById('output').textContent = `No se pudo conectar con el servidor para cargar datos. Usando datos de prueba. Detalle: ${error.message}`;
+    console.error('Error al cargar datos, usando datos de prueba:', error);
     datos = [{
       id: 30159,
       nif_empresa: "619156757",
       numero_linea_bot: "BOT-5",
       name: "Backup01",
       estacion: "Backup01",
-      servicios: JSON.stringify([{ tipo: "Fibra", plan: "Love Empresa Activa", numero: "607355226", renove: ["MULTIDISPOSITIVO AL MEJOR PRECIO"] }]),
+      servicios: JSON.stringify([{ tipo: "Fibra", plan: "Love Empresa Activa" }]),
       compromisos: JSON.stringify([{ numero: "", mes: "JUL", title: "Pac None Abril 20 2025-04-30 1 t", nif: "39860 OK" }]),
       detalles_linea: "",
       factura: "",
@@ -354,11 +316,11 @@ async function cargarDatos(nif) {
       }]),
       factura_pdf: "",
       fecha_proces: "30/04/2025",
-      info: "{\"nif\": \"X9340481K\", \"nombre\": \"No disponible\", \"details\": [], \"seg_fijo\": \"EMP - 1 lInea\", \"direccion\": \"CALLE DE LA ISLA DE LANZAROTE, No 36, 28770, COLMENAR VIEJO, MADRID\", \"seg_movil\": \"EMP - 1 lInea\", \"scoring_grey\": 10, \"scoring_orange\": 0}",
+      info: "{\"nif\": \"39860998C\", \"nombre\": \"AURORA FORNOS VILANOVA\", \"details\": [\"Credito total del cliente:4000 €*\", \"Credito utilizado:0 € *\", \"Credito disponible:4000 € *\"], \"seg_fijo\": \"EMP - 1 lInea\", \"direccion\": \"AVENIDA MILALENARI, No 17, 43850, CAMBRILS, TARRAGONA\", \"seg_movil\": \"EMP - 1 lInea\", \"scoring_grey\": 10, \"scoring_orange\": 0}",
       mensaje_error: "",
       fechaAlta: "30/04/2025",
-      "Nif Extraido": "X9340481K",
-      Plan: "Love Fútbol 2"
+      "Nif Extraido": "39860998C",
+      Plan: "Love Empresa Activa"
     }];
   }
 
@@ -387,13 +349,6 @@ async function cargarDatos(nif) {
     customerInfo = { nombre: "No disponible", direccion: "No disponible" };
   }
 
-  // Display customer card
-  clienteCardContenedor.innerHTML = `
-    <div><strong>Dirección:</strong> ${customerInfo.direccion || "No disponible"}</div><br>
-    <div><strong>DNI:</strong> ${data["Nif Extraido"] || "No disponible"}</div><br>
-  `;
-
-  // Map and nearest store
   if (cp !== "N/A") {
     try {
       geo = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${cp}&country=España&format=json`)
@@ -413,7 +368,7 @@ async function cargarDatos(nif) {
       tiendaCercana = tiendas
         .map(t => ({
           ...t,
-          distancia: calcularDistancia(lat, lon, parseFloat(t.lat), parseFloat(t.lng))
+          distancia: calcularDistancia(lat, lon, t.lat, t.lng)
         }))
         .sort((a, b) => a.distancia - b.distancia)[0];
 
@@ -434,29 +389,28 @@ async function cargarDatos(nif) {
         .on('mouseover', function () { this.openPopup(); })
         .on('mouseout', function () { this.closePopup(); });
 
-      lineaRuta = L.polyline([[lat, lon], [parseFloat(tiendaCercana.lat), parseFloat(tiendaCercana.lng)]], {
+      lineaRuta = L.polyline([[lat, lon], [tiendaCercana.lat, tiendaCercana.lng]], {
         color: '#0077cc',
         weight: 3,
         dashArray: '5,5'
       }).addTo(map);
 
       map.setView([lat, lon], 11);
-
-      mapDetailsContenedor.innerHTML = `
-        <strong>Código Postal:</strong> ${cp}<br>
-        <strong>Tienda más cercana:</strong> ${tiendaCercana.nombre}<br>
-        <strong>Distancia:</strong> ${tiendaCercana.distancia.toFixed(2)} km
-      `;
     }
   }
 
-  // Resumen de Números con Renove
+  clienteCardContenedor.innerHTML = `
+    <div><strong>👤 Nombre:</strong> ${customerInfo.nombre || "No disponible"}</div><br>
+    <div><strong>🏠 Dirección:</strong> ${customerInfo.direccion || "No disponible"}</div><br>
+    <div><strong>🆔 DNI:</strong> ${data["Nif Extraido"] || "No disponible"}</div><br>
+  `;
+
   let numerosConRenove = [];
   if (data.servicios) {
     try {
       const servicios = JSON.parse(data.servicios);
       servicios.forEach(item => {
-        const renove = buscarClave(item, "renove");
+        const renove = buscarClave(item, "Renove");
         if (item.numero && Array.isArray(renove) && renove.length && renove.join(", ") !== "Ninguno") {
           numerosConRenove.push({ numero: item.numero, renove: renove.join(", ") });
         }
@@ -468,14 +422,19 @@ async function cargarDatos(nif) {
 
   const resumenRenoveSection = document.createElement("div");
   resumenRenoveSection.innerHTML = `<h3>Resumen de Números con Renove</h3>`;
+
   const resumenRenoveCard = document.createElement("div");
   resumenRenoveCard.className = "resumen-renove-card";
+
+  const tituloResumen = document.createElement("strong");
+  tituloResumen.textContent = "📦 Números con Renove";
+  resumenRenoveCard.appendChild(tituloResumen);
 
   if (numerosConRenove.length > 0) {
     const listaNumeros = document.createElement("div");
     listaNumeros.className = "detalle";
     listaNumeros.innerHTML = numerosConRenove
-      .map(item => `<span class="numero-grande">${item.numero}</span> con Renove: <span class="renove-highlight">${item.renove}</span>`)
+      .map(item => `<span class="numero-grande">${item.numero}</span> - Renove: <span class="renove-highlight">${item.renove}</span>`)
       .join("<br>");
     resumenRenoveCard.appendChild(listaNumeros);
   } else {
@@ -484,10 +443,10 @@ async function cargarDatos(nif) {
     mensaje.textContent = "No hay números con Renove.";
     resumenRenoveCard.appendChild(mensaje);
   }
+
   resumenRenoveSection.appendChild(resumenRenoveCard);
   contenedor.appendChild(resumenRenoveSection);
 
-  // Service details
   let tipoServicios = "Tipo no especificado";
   if (data.servicios) {
     try {
@@ -499,57 +458,319 @@ async function cargarDatos(nif) {
       tipoServicios = "Error al cargar el tipo";
     }
   }
-  tipoSectionContenedor.innerHTML = `<strong>Tipo:</strong> ${tipoServicios}`;
+  tipoSectionContenedor.innerHTML = `📝 Tipo: ${tipoServicios}`;
 
-  if (data.servicios) {
+  if (cp !== "N/A" && geo && geo.length > 0 && tiendaCercana) {
+    mapDetailsContenedor.innerHTML = `
+      <strong>🏠 Código Postal:</strong> ${cp}<br>
+      <strong>🏬 Tienda más cercana:</strong> ${tiendaCercana.nombre}<br>
+      <strong>📏 Distancia:</strong> ${tiendaCercana.distancia.toFixed(2)} km
+    `;
+  }
+
+  let detallesLineasMap = {};
+  if (data.detalles_linea) {
     try {
-      const servicios = JSON.parse(data.servicios);
-      servicios.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "servicio-card";
+      const detalles = JSON.parse(data.detalles_linea);
+      detalles.forEach(d => { if (d.numero) detallesLineasMap[d.numero] = d; });
+    } catch {}
+  }
 
-        const planTitle = document.createElement("strong");
-        planTitle.textContent = `${data.Plan || "Plan no especificado"}`;
-        card.appendChild(planTitle);
+  const camposJson = [
+    { campo: "servicios", titulo: "Servicios" },
+    { campo: "factura", titulo: "Factura" },
+    { campo: "factura_detalle", titulo: "Detalle de Factura" }
+  ];
 
-        const renove = buscarClave(item, "renove");
-        if (renove && Array.isArray(renove) && renove.length) {
-          const renoveDiv = document.createElement("div");
-          renoveDiv.className = "detalle";
-          renoveDiv.innerHTML = `<strong>Renove:</strong> <span class="renove-highlight">${renove.join(", ")}</span>`;
-          card.appendChild(renoveDiv);
-        } else {
-          const renoveDiv = document.createElement("div");
-          renoveDiv.className = "detalle";
-          renoveDiv.innerHTML = `<strong>Renove:</strong> Ninguno`;
-          card.appendChild(renoveDiv);
+  camposJson.forEach(({ campo, titulo }) => {
+    if (data[campo]) {
+      const seccion = document.createElement("div");
+      seccion.innerHTML = `<h3>${titulo}</h3>`;
+      try {
+        const contenido = JSON.parse(data[campo] || "[]");
+
+        if (campo === "factura") {
+          const canvasWrapper = document.createElement("div");
+          canvasWrapper.style.padding = "10px";
+          const canvas = document.createElement("canvas");
+          canvas.height = 70;
+          canvasWrapper.appendChild(canvas);
+          seccion.appendChild(canvasWrapper);
+
+          const meses = contenido.map(item => item.mes);
+          const montos = contenido.map(item => {
+            let valor = parseFloat(String(item.monto).replace(",", ".").replace("€", "").trim());
+            return isNaN(valor) ? 0 : valor;
+          });
+
+          if (graficoFactura) graficoFactura.destroy();
+          graficoFactura = new Chart(canvas, {
+            type: 'bar',
+            data: {
+              labels: meses,
+              datasets: [{
+                label: 'Factura mensual (€)',
+                data: montos,
+                backgroundColor: 'rgba(255, 159, 64, 0.7)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              responsive: true,
+              plugins: {
+                datalabels: {
+                  anchor: 'end',
+                  align: 'end',
+                  color: '#333',
+                  font: { weight: 'bold' },
+                  formatter: value => value.toFixed(2) + " €"
+                },
+                legend: { display: false }
+              },
+              scales: {
+                x: { ticks: { color: '#333' }, grid: { display: false } },
+                y: {
+                  ticks: {
+                    color: '#333',
+                    callback: val => val + " €"
+                  },
+                  grid: { color: '#eee' }
+                }
+              }
+            },
+            plugins: [ChartDataLabels]
+          });
         }
 
-        const descuentos = buscarClave(item, "descuentos") || [];
-        const descuentosDiv = document.createElement("div");
-        descuentosDiv.className = "detalle";
-        descuentosDiv.innerHTML = `<strong>Descuentos:</strong> <span class="descuento-highlight">${Array.isArray(descuentos) && descuentos.length ? descuentos.join(", ") : "Ninguno"}</span>`;
-        card.appendChild(descuentosDiv);
+        if (campo === "factura_detalle") {
+          const btnToggle = document.createElement("button");
+          btnToggle.className = "btn-toggle";
+          btnToggle.textContent = "Expandir/Colapsar Todo";
+          btnToggle.onclick = () => {
+            nodosFactura.forEach(({ chevron, children }) => {
+              const isOpen = children.classList.contains("open");
+              children.classList.toggle("open");
+              chevron.textContent = isOpen ? "▶" : "▼";
+            });
+          };
+          seccion.appendChild(btnToggle);
 
-        const consumo = "No disponible"; // Placeholder, adjust based on data
-        const permanencia = "02/03/2026"; // Example, adjust based on data
-        const ventaPlazos = "Sin VAPs"; // Example, adjust based on data
+          checkboxesFactura = [];
+          contenido.forEach(item => {
+            const nodo = renderFacturaDetalle(item, 0);
+            seccion.appendChild(nodo);
+          });
 
-        const detallesDiv = document.createElement("div");
-        detallesDiv.className = "detalle";
-        detallesDiv.innerHTML = `
-          <strong>Consumo:</strong> ${consumo}<br>
-          <strong>Permanencia:</strong> ${permanencia}<br>
-          <strong>Venta a Plazos:</strong> ${ventaPlazos}
-        `;
-        card.appendChild(detallesDiv);
+          let totalInicial = 0;
+          checkboxesFactura.forEach(cb => {
+            totalInicial += parseFloat(cb.dataset.monto) || 0;
+          });
 
-        contenedor.appendChild(card);
-      });
-    } catch (e) {
-      console.error('Error parsing servicios:', e);
+          const totalDiv = document.createElement("div");
+          totalDiv.id = "totalFacturaDesglosada";
+          totalDiv.className = "detalle";
+          totalDiv.style.fontWeight = "bold";
+          totalDiv.style.marginTop = "10px";
+          totalDiv.innerHTML = `💶 Total factura desglosada: ${totalInicial.toFixed(2)} € <br><br><br>`;
+          seccion.appendChild(totalDiv);
+
+          const additionalChargeInputDiv = document.createElement("div");
+          additionalChargeInputDiv.id = "additionalChargeInput";
+          additionalChargeInputDiv.style.marginTop = "10px";
+          additionalChargeInputDiv.className = "detalle";
+          additionalChargeInputDiv.innerHTML = `
+            <label for="additionalCharge">➕ Cargo Adicional (€):</label>
+            <input type="number" id="additionalCharge" value="0" min="0" step="0.01">
+            <button id="calcularTotalBtn" class="nif-btn" style="margin-left: 10px;">Calcular Total</button>
+          `;
+          seccion.appendChild(additionalChargeInputDiv);
+
+          const finalTotalDiv = document.createElement("div");
+          finalTotalDiv.id = "totalFacturaConAdicional";
+          finalTotalDiv.style.marginTop = "10px";
+          finalTotalDiv.style.fontWeight = "bold";
+          finalTotalDiv.className = "detalle";
+          finalTotalDiv.textContent = `💶 Total con cargos adicionales: ${totalInicial.toFixed(2)} €`;
+          seccion.appendChild(finalTotalDiv);
+
+          // Asegurar que el botón esté en el DOM antes de asignar el evento
+          const checkButton = () => {
+            const calculateButton = document.getElementById("calcularTotalBtn");
+            if (calculateButton) {
+              calculateButton.addEventListener("click", () => {
+                console.log("Botón 'Calcular Total' clicado");
+                recalcularTotalFactura();
+              });
+            } else {
+              console.error("Botón 'calcularTotalBtn' no encontrado en el DOM, reintentando...");
+              setTimeout(checkButton, 100); // Reintentar después de 100ms
+            }
+          };
+          checkButton();
+        }
+
+        if (campo === "servicios") {
+          contenido.forEach(item => {
+            const card = document.createElement("div");
+            card.className = "servicio-card";
+
+            const tituloCard = document.createElement("strong");
+            tituloCard.textContent = "📱 " + (data.Plan || "Tipo desconocido");
+            card.appendChild(tituloCard);
+
+            if (item.etiquetas) {
+              item.etiquetas.split("|").map(e => e.trim()).forEach(et => {
+                const badge = document.createElement("span");
+                badge.className = "badge";
+                badge.textContent = et;
+                card.appendChild(badge);
+              });
+            }
+
+            if (item.numero) {
+              const numero = document.createElement("div");
+              numero.className = "detalle";
+              const span = document.createElement("span");
+              span.className = "numero-grande";
+              span.textContent = item.numero;
+
+              const botonCopiar = document.createElement("button");
+              botonCopiar.textContent = "📋";
+              botonCopiar.className = "copy-btn";
+              botonCopiar.onclick = () => {
+                navigator.clipboard.writeText(item.numero);
+                botonCopiar.textContent = "✅";
+                setTimeout(() => { botonCopiar.textContent = "📋"; }, 1500);
+              };
+
+              numero.appendChild(span);
+              numero.appendChild(botonCopiar);
+              card.appendChild(numero);
+            }
+
+            if (item.activo_desde) {
+              const activo = divTexto(`<strong class="descriptor">📅</strong> ${item.activo_desde}`);
+              activo.style.marginTop = "6px";
+              card.appendChild(activo);
+            }
+
+            if (item.detalles) {
+              item.detalles
+                .split("|")
+                .map(det => det.trim())
+                .filter(det => !/compromisos/i.test(det) && !/consumo/i.test(det) && !/permanencia/i.test(det) && !/venta a plazos/i.test(det))
+                .forEach((det, i) => {
+                  let textoDetalle = det.toLowerCase().includes("dirección del servicio fijo")
+                    ? `<strong class="descriptor">🏠 Dirección del servicio fijo:</strong> ${det.replace(/\n/g, ": ")}`
+                    : `<strong class="descriptor">📋 Detalle:</strong> ${det.replace(/\n/g, ": ")}`;
+                  const detalle = divTexto(textoDetalle);
+                  if (i === 0) detalle.style.marginTop = "6px";
+                  card.appendChild(detalle);
+                });
+            }
+
+            const extrasBox = document.createElement("div");
+            extrasBox.className = "extras-box";
+            const extrasTitle = document.createElement("div");
+            extrasTitle.style.marginBottom = "6px";
+            extrasBox.appendChild(extrasTitle);
+
+            const renove = buscarClave(item, "Renove");
+            const descuentos = buscarClave(item, "Bonos y Descuen.");
+            const textoExtras = `
+              <strong class="descriptor">📦 Renove:</strong> <span class="renove-highlight">${Array.isArray(renove) && renove.length ? renove.join(", ") : "Ninguno"}</span><br><br>
+              <strong class="descriptor">🎁 Descuentos:</strong> <span class="descuento-highlight">${Array.isArray(descuentos) && descuentos.length ? descuentos.join(", ") : "Ninguno"}</span>
+            `;
+
+            const extrasDetalle = document.createElement("div");
+            extrasDetalle.className = "detalle";
+            extrasDetalle.innerHTML = textoExtras;
+            extrasBox.appendChild(extrasDetalle);
+            card.appendChild(extrasBox);
+
+            const detallesBox = document.createElement("div");
+            detallesBox.className = "extras-box";
+            detallesBox.style.marginTop = "10px";
+
+            const detallesTitle = document.createElement("div");
+            detallesTitle.style.marginBottom = "6px";
+            detallesBox.appendChild(detallesTitle);
+
+            const detallesContenido = document.createElement("div");
+            detallesContenido.className = "detalle";
+
+            const activoDesde = item.activo_desde || "-";
+            const detallesTexto = item.detalles || "";
+            const extraerCampo = (clave) => {
+              if (!detallesTexto) return "No disponible";
+              const secciones = detallesTexto.split("|").map(s => s.trim());
+              for (let s of secciones) {
+                const [k, ...resto] = s.split("\n");
+                if (k.toLowerCase().includes(clave.toLowerCase())) {
+                  return resto.join("\n").trim() || "No disponible";
+                }
+              }
+              return "No disponible";
+            };
+
+            const consumo = detallesLineasMap[item.numero]?.consumo || extraerCampo("consumo");
+            const permanencia = detallesLineasMap[item.numero]?.permanencia || extraerCampo("permanencia");
+            const ventaPlazos = detallesLineasMap[item.numero]?.plazos || extraerCampo("venta a plazos");
+            const dispositivoExtra = detallesLineasMap[item.numero]?.dispositivos || "-";
+
+            detallesContenido.innerHTML = `
+              <strong class="descriptor">📊 Consumo:</strong> ${consumo}<br>
+              <strong class="descriptor">⏳ Permanencia:</strong> ${permanencia}<br>
+              <strong class="descriptor">💰 Venta a Plazos:</strong> ${ventaPlazos}<br>
+              <strong class="descriptor">📱 Dispositivo en Uso:</strong> ${dispositivoExtra !== "-" ? dispositivoExtra : "No disponible"}<br>
+            `;
+
+            detallesBox.appendChild(detallesContenido);
+            card.appendChild(detallesBox);
+
+            if (data.compromisos) {
+              try {
+                const compromisos = JSON.parse(data.compromisos);
+                const relacionados = compromisos.filter(c => c.id === item.numero);
+                if (relacionados.length > 0) {
+                  relacionados.forEach(comp => {
+                    const compromisoBox = document.createElement("div");
+                    compromisoBox.className = "extras-box";
+                    compromisoBox.style.marginTop = "10px";
+
+                    const compromisoTitle = document.createElement("div");
+                    compromisoTitle.style.marginBottom = "6px";
+                    compromisoBox.appendChild(compromisoTitle);
+
+                    const compromisoDetalle = document.createElement("div");
+                    compromisoDetalle.className = "detalle";
+                    compromisoDetalle.innerHTML = `
+                      <strong class="descriptor">📝 Motivo:</strong> ${comp.motivo || "Sin motivo"}<br>
+                      <strong class="descriptor">⏳ Periodo:</strong> ${comp.f_inicio || "?"} → ${comp.f_fin || "?"}<br>
+                      <strong class="descriptor">📆 Duración:</strong> ${comp.duracion || "-"}<br>
+                      <strong class="descriptor">📄 Resumen:</strong> ${comp.resumen || "-"}
+                    `;
+                    compromisoBox.appendChild(compromisoDetalle);
+
+                    card.appendChild(compromisoBox);
+                  });
+                }
+              } catch (e) {
+                console.warn("Error al parsear compromisos", e);
+              }
+            }
+
+            seccion.appendChild(card);
+          });
+        }
+
+      } catch (e) {
+        seccion.innerHTML += `<p style="color:red;">⚠️ Error al interpretar ${campo}</p>`;
+      }
+      contenedor.appendChild(seccion);
     }
-  }
+  });
 }
 
 function buscarProfundamente(obj, clave, valorBuscado) {
@@ -684,5 +905,4 @@ function actualizarFechaHora() {
 setInterval(actualizarFechaHora, 1000);
 actualizarFechaHora();
 
-cargarTiendas();
 cargarNifs();
