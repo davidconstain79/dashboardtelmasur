@@ -100,7 +100,7 @@ async function cargarNifs() {
     const datalist = document.getElementById('nifList');
     datalist.innerHTML = '';
     nifs.forEach(nif => {
-      const option = document.createElement('option'); // Fixed typo
+      const option = document.createElement('option');
       option.value = nif;
       datalist.appendChild(option);
     });
@@ -136,12 +136,31 @@ async function cargarDatos(nif) {
     // Update cliente info
     const clienteCard = document.getElementById('clienteCard');
     const info = JSON.parse(datos.info || '{}');
+    const servicios = JSON.parse(datos.servicios || '[]');
+    const compromisos = JSON.parse(datos.compromisos || '[]');
+    const facturaDetalles = JSON.parse(datos.factura_detalle || '[]');
     clienteCard.innerHTML = `
       <h3>${info.nombre || 'Sin nombre'}</h3>
       <p><strong>NIF:</strong> ${nif}</p>
       <p><strong>Dirección:</strong> ${info.direccion || 'Sin dirección'}</p>
       <p><strong>CP:</strong> ${datos.CP || 'Sin CP'}</p>
       <p><strong>Plan:</strong> ${datos.Plan || 'Sin plan'}</p>
+      <p><strong>Interesa:</strong> ${datos.interesa || 'N/A'}</p>
+      <p><strong>Mensaje de Error:</strong> ${datos.mensaje_error || 'Ninguno'}</p>
+      <p><strong>Fecha de Proceso:</strong> ${datos.fecha_proceso || 'N/A'}</p>
+      <h4>Servicios:</h4>
+      <ul>
+        ${servicios.map(s => `<li>${s.plan} (${s.tipo}) - ${s.numero}</li>`).join('') || '<li>Sin servicios</li>'}
+      </ul>
+      <h4>Compromisos:</h4>
+      <ul>
+        ${compromisos.map(c => `<li>ID: ${c.id}</li>`).join('') || '<li>Sin compromisos</li>'}
+      </ul>
+      <h4>Detalles de Factura:</h4>
+      <ul>
+        ${facturaDetalles.map(fd => `<li>${fd.title}</li>`).join('') || '<li>Sin detalles</li>'}
+      </ul>
+      <p><strong>Factura PDF:</strong> ${datos.factura_pdf || 'No disponible'}</p>
     `;
 
     // Geocode customer location
@@ -169,16 +188,32 @@ async function cargarDatos(nif) {
       }
     }
 
-    // Update billing chart
+    // Update billing chart and table
     if (typeof Chart === 'undefined') {
       console.error('Chart.js no está cargado. Asegúrese de incluir la librería en index.html.');
       document.getElementById('output').innerHTML = '<p>Error: Chart.js no está disponible.</p>';
       return;
     }
     const factura = JSON.parse(datos.factura || '[]');
+    const outputDiv = document.getElementById('output');
+    outputDiv.innerHTML = `
+      <h4>Facturación Mensual:</h4>
+      <table border="1">
+        <tr>
+          <th>Mes</th>
+          <th>Monto</th>
+        </tr>
+        ${factura.map(f => `
+          <tr>
+            <td>${f.mes}</td>
+            <td>${f.monto}</td>
+          </tr>
+        `).join('') || '<tr><td colspan="2">Sin facturas</td></tr>'}
+      </table>
+      <h4>Gráfico de Facturación:</h4>
+    `;
     const ctx = document.createElement('canvas');
-    document.getElementById('output').innerHTML = '';
-    document.getElementById('output').appendChild(ctx);
+    outputDiv.appendChild(ctx);
     new Chart(ctx, {
       type: 'bar',
       data: {
@@ -229,7 +264,7 @@ async function cargarPlanesUnicos() {
     console.log('Planes únicos:', uniquePlans);
 
     const planFilter = document.getElementById('planFilter');
-    planFilter.innerHTML = '<option value="">Todos los planes</option>'; // Add default option
+    planFilter.innerHTML = '<option value="">Todos los planes</option>';
     uniquePlans.forEach(plan => {
       const option = document.createElement('option');
       option.value = plan;
@@ -314,7 +349,12 @@ function buscarIdEnServicios() {
     const servicios = JSON.parse(datos.servicios || '[]');
     const servicio = servicios.find(s => s.numero === idSearch);
     if (servicio) {
-      resultado.innerHTML = `Encontrado: ${servicio.plan} (${servicio.tipo})`;
+      resultado.innerHTML = `
+        <h4>Resultado de Búsqueda:</h4>
+        <p><strong>Plan:</strong> ${servicio.plan}</p>
+        <p><strong>Tipo:</strong> ${servicio.tipo}</p>
+        <p><strong>Número:</strong> ${servicio.numero}</p>
+      `;
       cargarDatos(datos['Nif Extraido']);
     } else {
       resultado.innerHTML = 'Número no encontrado en los servicios.';
@@ -379,7 +419,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     filtrarPorPlan(plan);
   });
 
-  // Add event listener for phone number search
   const searchButton = document.getElementById('idSearchButton');
   if (searchButton) {
     searchButton.addEventListener('click', buscarIdEnServicios);
