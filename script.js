@@ -26,7 +26,13 @@ async function cargarTiendas() {
     console.log('Tiendas cargadas desde CSV:', tiendas);
 
     tiendas.forEach(t => {
-      L.marker([parseFloat(t.lat), parseFloat(t.lng)], {
+      const lat = parseFloat(t.lat);
+      const lng = parseFloat(t.lng);
+      if (isNaN(lat) || isNaN(lng)) {
+        console.warn(`Tienda ${t.nombre} tiene coordenadas inválidas (lat: ${t.lat}, lng: ${t.lng}). Se omite.`);
+        return;
+      }
+      L.marker([lat, lng], {
         title: t.nombre,
         icon: L.icon({
           iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
@@ -76,11 +82,12 @@ async function cargarTiendas() {
 async function cargarNifs() {
   try {
     const response = await fetch('/nifs');
-    if (!response.ok) throw new Error('Error al cargar NIFs');
+    if (!response.ok) throw new Error(`Error al cargar NIFs: ${response.status}`);
     nifs = await response.json();
     console.log('NIFs cargados:', nifs);
   } catch (error) {
     console.error('Error al cargar NIFs, usando datos de prueba:', error);
+    document.getElementById('output').textContent = `No se pudo conectar con el servidor para cargar NIFs. Usando datos de prueba. Detalle: ${error.message}`;
     nifs = ["619156757", "679735826", "663579369"];
   }
 
@@ -193,6 +200,7 @@ async function cargarPlanesUnicos() {
 
   if (errorCount === nifs.length) {
     console.error('No se pudieron cargar planes de ningún NIF. Usando datos de prueba para planes.');
+    document.getElementById('output').textContent = 'No se pudo conectar con el servidor para cargar planes. Usando datos de prueba.';
     planesUnicos = ["Love Empresa Activa", "Love FUTbol 2", "Fibra con 1 Línea", "Love TOTAL 4"];
   }
 
@@ -312,7 +320,7 @@ async function cargarDatos(nif) {
     console.log(`Datos cargados para NIF ${nif}:`, datos);
   } catch (error) {
     console.error(`Error al cargar datos para NIF ${nif}, usando datos de prueba:`, error);
-    document.getElementById('output').textContent = `Error al cargar datos. Usando datos de prueba. Detalle: ${error.message}`;
+    document.getElementById('output').textContent = `No se pudo conectar con el servidor para cargar datos. Usando datos de prueba. Detalle: ${error.message}`;
     datos = [{
       id: 30159,
       nif_empresa: "619156757",
