@@ -5,100 +5,104 @@ let currentNifIndex = 0;
 function initMap() {
   map = L.map('map').setView([40.4168, -3.7038], 6); // Centered on Madrid
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
     maxZoom: 18
   }).addTo(map);
 }
 
-// Load store data from CSV
-async function cargarTiendas() {
+// Load store data (hardcoded for now)
+function cargarTiendas() {
+  console.log('Cargando tiendas (usando datos de prueba debido a falta de stores.csv)');
+  tiendas = [
+    { nombre: "TD Camarena", cp: "28047", lat: 40.387, lng: -3.751 },
+    { nombre: "TD Torrijos", cp: "45500", lat: 39.983, lng: -4.283 },
+    { nombre: "FQ C.C. Valdemoro", cp: "28340", lat: 40.19, lng: -3.673 }
+  ];
+
+  tiendas.forEach(t => {
+    L.marker([parseFloat(t.lat), parseFloat(t.lng)], {
+      title: t.nombre,
+      icon: L.icon({
+        iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32]
+      })
+    }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
+  });
+}
+
+// Load NIFs from pruebabase_procesado.csv
+async function cargarNifs() {
   try {
-    const response = await fetch('stores.csv');
+    console.log('Intentando cargar pruebabase_procesado.csv');
+    const response = await fetch('pruebabase_procesado.csv');
     if (!response.ok) {
       throw new Error(`HTTP error! Status: ${response.status}, URL: ${response.url}`);
     }
     const text = await response.text();
-    tiendas = Papa.parse(text, { 
+    console.log('Contenido del CSV:', text.substring(0, 200)); // Log first 200 chars for debugging
+    const parsed = Papa.parse(text, { 
       header: true, 
       skipEmptyLines: true, 
       delimiter: ';' 
-    }).data;
-    console.log('Tiendas cargadas desde CSV:', tiendas);
-
-    tiendas.forEach(t => {
-      L.marker([parseFloat(t.lat), parseFloat(t.lng)], {
-        title: t.nombre,
-        icon: L.icon({
-          iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32]
-        })
-      }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
     });
-  } catch (error) {
-    console.error('Error al cargar stores.csv:', error.message);
-    console.error('Usando datos de prueba');
-    tiendas = [
-      { nombre: "TD Camarena", cp: "28047", lat: 40.387, lng: -3.751 },
-      { nombre: "TD Torrijos", cp: "45500", lat: 39.983, lng: -4.283 },
-      { nombre: "FQ C.C. Valdemoro", cp: "28340", lat: 40.19, lng: -3.673 }
-    ];
-
-    tiendas.forEach(t => {
-      L.marker([t.lat, t.lng], {
-        title: t.nombre,
-        icon: L.icon({
-          iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
-          iconSize: [32, 32],
-          iconAnchor: [16, 32]
-        })
-      }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
-    });
-  }
-}
-
-// Load NIFs from API or customer CSV
-async function cargarNifs() {
-  try {
-    const response = await fetch('pruebabase_procesado.csv');
-    if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+    if (parsed.errors.length > 0) {
+      throw new Error(`Errores al parsear CSV: ${JSON.stringify(parsed.errors)}`);
     }
-    const text = await response.text();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' }).data;
-    nifs = parsed.map(row => row['Nif Extraido']).filter(nif => nif);
+    nifs = parsed.data.map(row => row['Nif Extraido']).filter(nif => nif);
     console.log('NIFs cargados desde CSV:', nifs);
+
+    const datalist = document.getElementById('nifList');
+    datalist.innerHTML = '';
+    nifs.forEach(nif => {
+      const option = document.createElement('option');
+      option.value = nif;
+      datalist.appendChild(option);
+    });
+
+    if (nifs.length > 0) {
+      document.getElementById('nifInput').value = nifs[0];
+      currentNifIndex = 0;
+      cargarDatos(nifs[0]);
+    } else {
+      throw new Error('No se encontraron NIFs en el CSV');
+    }
   } catch (error) {
     console.error('Error al cargar NIFs:', error.message);
     nifs = ["X9430481K", "02248434T", "54495405X"];
     console.log('Usando NIFs de prueba:', nifs);
-  }
 
-  const datalist = document.getElementById('nifList');
-  nifs.forEach(nif => {
-    const option = document.createElement('option');
-    option.value = nif;
-    datalist.appendChild(option);
-  });
+    const datalist = document.getElementById('nifList');
+    datalist.innerHTML = '';
+    nifs.forEach(nif => {
+      const option = document.createElement(' on');
+      option.value = nif;
+      datalist.appendChild(option);
+    });
 
-  if (nifs.length > 0) {
-    document.getElementById('nifInput').value = nifs[0];
-    cargarDatos(nifs[0]);
+    if (nifs.length > 0) {
+      document.getElementById('nifInput').value = nifs[0];
+      cargarDatos(nifs[0]);
+    }
   }
 }
 
 // Load customer data for a specific NIF
 async function cargarDatos(nif) {
   try {
+    console.log(`Cargando datos para NIF: ${nif}`);
     const response = await fetch('pruebabase_procesado.csv');
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${response.status}, URL: ${response.url}`);
     }
     const text = await response.text();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' }).data;
-    const cliente = parsed.find(row => row['Nif Extraido'] === nif);
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' });
+    if (parsed.errors.length > 0) {
+      throw new Error(`Errores al parsear CSV: ${JSON.stringify(parsed.errors)}`);
+    }
+    const cliente = parsed.data.find(row => row['Nif Extraido'] === nif);
     if (!cliente) {
-      throw new Error('Cliente no encontrado');
+      throw new Error(`Cliente no encontrado para NIF: ${nif}`);
     }
 
     datos = cliente;
@@ -119,6 +123,7 @@ async function cargarDatos(nif) {
     const cp = datos.CP;
     if (cp) {
       try {
+        console.log(`Geocodificando CP: ${cp}`);
         const geoResponse = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${cp}&country=Spain&format=json&limit=1`);
         const geoData = await geoResponse.json();
         if (geoData.length > 0) {
@@ -131,6 +136,8 @@ async function cargarDatos(nif) {
             })
           }).addTo(map).bindPopup(`📍 Cliente: ${info.nombre}<br/>CP: ${cp}`);
           map.setView([lat, lon], 12);
+        } else {
+          console.warn(`No se encontraron coordenadas para CP: ${cp}`);
         }
       } catch (geoError) {
         console.error('Error al geocodificar CP:', geoError.message);
@@ -178,13 +185,17 @@ async function cargarDatos(nif) {
 // Load unique plans for filtering
 async function cargarPlanesUnicos() {
   try {
+    console.log('Cargando planes únicos desde pruebabase_procesado.csv');
     const response = await fetch('pruebabase_procesado.csv');
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${response.status}, URL: ${response.url}`);
     }
     const text = await response.text();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' }).data;
-    uniquePlans = [...new Set(parsed.map(row => row.Plan).filter(plan => plan))];
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' });
+    if (parsed.errors.length > 0) {
+      throw new Error(`Errores al parsear CSV: ${JSON.stringify(parsed.errors)}`);
+    }
+    uniquePlans = [...new Set(parsed.data.map(row => row.Plan).filter(plan => plan))];
     console.log('Planes únicos:', uniquePlans);
 
     const planFilter = document.getElementById('planFilter');
@@ -197,6 +208,7 @@ async function cargarPlanesUnicos() {
   } catch (error) {
     console.error('Error al cargar planes:', error.message);
     uniquePlans = ["Love FUtbol 2", "Love Futbol Total 4 2024", "Love Cine y Series Total 4 2024"];
+    console.log('Usando planes de prueba:', uniquePlans);
     const planFilter = document.getElementById('planFilter');
     uniquePlans.forEach(plan => {
       const option = document.createElement('option');
@@ -210,14 +222,18 @@ async function cargarPlanesUnicos() {
 // Filter NIFs by plan
 async function filtrarPorPlan(plan) {
   try {
+    console.log(`Filtrando NIFs por plan: ${plan || 'Todos'}`);
     const response = await fetch('pruebabase_procesado.csv');
     if (!response.ok) {
-      throw new Error(`HTTP error! Status: ${response.status}`);
+      throw new Error(`HTTP error! Status: ${response.status}, URL: ${response.url}`);
     }
     const text = await response.text();
-    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' }).data;
-    nifs = plan ? parsed.filter(row => row.Plan === plan).map(row => row['Nif Extraido']) : parsed.map(row => row['Nif Extraido']);
-    console.log('NIFs filtrados por plan:', nifs);
+    const parsed = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' });
+    if (parsed.errors.length > 0) {
+      throw new Error(`Errores al parsear CSV: ${JSON.stringify(parsed.errors)}`);
+    }
+    nifs = plan ? parsed.data.filter(row => row.Plan === plan).map(row => row['Nif Extraido']) : parsed.data.map(row => row['Nif Extraido']);
+    console.log('NIFs filtrados:', nifs);
 
     const datalist = document.getElementById('nifList');
     datalist.innerHTML = '';
@@ -228,8 +244,12 @@ async function filtrarPorPlan(plan) {
     });
 
     if (nifs.length > 0) {
+      currentNifIndex = 0;
       document.getElementById('nifInput').value = nifs[0];
       cargarDatos(nifs[0]);
+    } else {
+      document.getElementById('nifInput').value = '';
+      document.getElementById('clienteCard').innerHTML = '<p>No se encontraron clientes para este plan.</p>';
     }
   } catch (error) {
     console.error('Error al filtrar por plan:', error.message);
@@ -241,6 +261,10 @@ async function filtrarPorPlan(plan) {
       option.value = nif;
       datalist.appendChild(option);
     });
+    if (nifs.length > 0) {
+      document.getElementById('nifInput').value = nifs[0];
+      cargarDatos(nifs[0]);
+    }
   }
 }
 
@@ -285,8 +309,9 @@ function actualizarFechaHora() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('Inicializando dashboard...');
   initMap();
-  await cargarTiendas();
+  cargarTiendas();
   await cargarNifs();
   await cargarPlanesUnicos();
   actualizarFechaHora();
@@ -318,7 +343,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   document.getElementById('planFilter').addEventListener('change', (e) => {
     const plan = e.target.value;
-    currentNifIndex = 0;
     filtrarPorPlan(plan);
   });
 });
