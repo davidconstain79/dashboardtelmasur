@@ -315,7 +315,7 @@ async function cargarDatos(nif) {
       numero_linea_bot: "BOT-5",
       name: "Backup01",
       estacion: "Backup01",
-      servicios: JSON.stringify([{ tipo: "Fibra", plan: "Love Empresa Activa" }]),
+      servicios: JSON.stringify([{ tipo: "Fibra", plan: "Love Empresa Activa", numero: "607355226", renove: ["MULTIDISPOSITIVO AL MEJOR PRECIO"] }]),
       compromisos: JSON.stringify([{ numero: "", mes: "JUL", title: "Pac None Abril 20 2025-04-30 1 t", nif: "39860 OK" }]),
       detalles_linea: "",
       factura: "",
@@ -342,11 +342,11 @@ async function cargarDatos(nif) {
       }]),
       factura_pdf: "",
       fecha_proces: "30/04/2025",
-      info: "{\"nif\": \"39860998C\", \"nombre\": \"AURORA FORNOS VILANOVA\", \"details\": [\"Credito total del cliente:4000 €*\", \"Credito utilizado:0 € *\", \"Credito disponible:4000 € *\"], \"seg_fijo\": \"EMP - 1 lInea\", \"direccion\": \"AVENIDA MILALENARI, No 17, 43850, CAMBRILS, TARRAGONA\", \"seg_movil\": \"EMP - 1 lInea\", \"scoring_grey\": 10, \"scoring_orange\": 0}",
+      info: "{\"nif\": \"X9340481K\", \"nombre\": \"No disponible\", \"details\": [], \"seg_fijo\": \"EMP - 1 lInea\", \"direccion\": \"CALLE DE LA ISLA DE LANZAROTE, No 36, 28770, COLMENAR VIEJO, MADRID\", \"seg_movil\": \"EMP - 1 lInea\", \"scoring_grey\": 10, \"scoring_orange\": 0}",
       mensaje_error: "",
       fechaAlta: "30/04/2025",
-      "Nif Extraido": "39860998C",
-      Plan: "Love Empresa Activa"
+      "Nif Extraido": "X9340481K",
+      Plan: "Love Fútbol 2"
     }];
   }
 
@@ -375,6 +375,13 @@ async function cargarDatos(nif) {
     customerInfo = { nombre: "No disponible", direccion: "No disponible" };
   }
 
+  // Display customer card
+  clienteCardContenedor.innerHTML = `
+    <div><strong>Dirección:</strong> ${customerInfo.direccion || "No disponible"}</div><br>
+    <div><strong>DNI:</strong> ${data["Nif Extraido"] || "No disponible"}</div><br>
+  `;
+
+  // Map and nearest store
   if (cp !== "N/A") {
     try {
       geo = await fetch(`https://nominatim.openstreetmap.org/search?postalcode=${cp}&country=España&format=json`)
@@ -422,21 +429,22 @@ async function cargarDatos(nif) {
       }).addTo(map);
 
       map.setView([lat, lon], 11);
+
+      mapDetailsContenedor.innerHTML = `
+        <strong>Código Postal:</strong> ${cp}<br>
+        <strong>Tienda más cercana:</strong> ${tiendaCercana.nombre}<br>
+        <strong>Distancia:</strong> ${tiendaCercana.distancia.toFixed(2)} km
+      `;
     }
   }
 
-  clienteCardContenedor.innerHTML = `
-    <div><strong>👤 Nombre:</strong> ${customerInfo.nombre || "No disponible"}</div><br>
-    <div><strong>🏠 Dirección:</strong> ${customerInfo.direccion || "No disponible"}</div><br>
-    <div><strong>🆔 DNI:</strong> ${data["Nif Extraido"] || "No disponible"}</div><br>
-  `;
-
+  // Resumen de Números con Renove
   let numerosConRenove = [];
   if (data.servicios) {
     try {
       const servicios = JSON.parse(data.servicios);
       servicios.forEach(item => {
-        const renove = buscarClave(item, "Renove");
+        const renove = buscarClave(item, "renove");
         if (item.numero && Array.isArray(renove) && renove.length && renove.join(", ") !== "Ninguno") {
           numerosConRenove.push({ numero: item.numero, renove: renove.join(", ") });
         }
@@ -448,19 +456,14 @@ async function cargarDatos(nif) {
 
   const resumenRenoveSection = document.createElement("div");
   resumenRenoveSection.innerHTML = `<h3>Resumen de Números con Renove</h3>`;
-
   const resumenRenoveCard = document.createElement("div");
   resumenRenoveCard.className = "resumen-renove-card";
-
-  const tituloResumen = document.createElement("strong");
-  tituloResumen.textContent = "📦 Números con Renove";
-  resumenRenoveCard.appendChild(tituloResumen);
 
   if (numerosConRenove.length > 0) {
     const listaNumeros = document.createElement("div");
     listaNumeros.className = "detalle";
     listaNumeros.innerHTML = numerosConRenove
-      .map(item => `<span class="numero-grande">${item.numero}</span> - Renove: <span class="renove-highlight">${item.renove}</span>`)
+      .map(item => `<span class="numero-grande">${item.numero}</span> con Renove: <span class="renove-highlight">${item.renove}</span>`)
       .join("<br>");
     resumenRenoveCard.appendChild(listaNumeros);
   } else {
@@ -469,10 +472,10 @@ async function cargarDatos(nif) {
     mensaje.textContent = "No hay números con Renove.";
     resumenRenoveCard.appendChild(mensaje);
   }
-
   resumenRenoveSection.appendChild(resumenRenoveCard);
   contenedor.appendChild(resumenRenoveSection);
 
+  // Service details
   let tipoServicios = "Tipo no especificado";
   if (data.servicios) {
     try {
@@ -484,318 +487,57 @@ async function cargarDatos(nif) {
       tipoServicios = "Error al cargar el tipo";
     }
   }
-  tipoSectionContenedor.innerHTML = `📝 Tipo: ${tipoServicios}`;
+  tipoSectionContenedor.innerHTML = `<strong>Tipo:</strong> ${tipoServicios}`;
 
-  if (cp !== "N/A" && geo && geo.length > 0 && tiendaCercana) {
-    mapDetailsContenedor.innerHTML = `
-      <strong>🏠 Código Postal:</strong> ${cp}<br>
-      <strong>🏬 Tienda más cercana:</strong> ${tiendaCercana.nombre}<br>
-      <strong>📏 Distancia:</strong> ${tiendaCercana.distancia.toFixed(2)} km
-    `;
-  }
-
-  let detallesLineasMap = {};
-  if (data.detalles_linea) {
+  if (data.servicios) {
     try {
-      const detalles = JSON.parse(data.detalles_linea);
-      detalles.forEach(d => { if (d.numero) detallesLineasMap[d.numero] = d; });
-    } catch {}
-  }
+      const servicios = JSON.parse(data.servicios);
+      servicios.forEach(item => {
+        const card = document.createElement("div");
+        card.className = "servicio-card";
 
-  const camposJson = [
-    { campo: "servicios", titulo: "Servicios" },
-    { campo: "factura", titulo: "Factura" },
-    { campo: "factura_detalle", titulo: "Detalle de Factura" }
-  ];
+        const planTitle = document.createElement("strong");
+        planTitle.textContent = `${data.Plan || "Plan no especificado"}`;
+        card.appendChild(planTitle);
 
-  camposJson.forEach(({ campo, titulo }) => {
-    if (data[campo]) {
-      const seccion = document.createElement("div");
-      seccion.innerHTML = `<h3>${titulo}</h3>`;
-      try {
-        const contenido = JSON.parse(data[campo] || "[]");
-
-        if (campo === "factura") {
-          const canvasWrapper = document.createElement("div");
-          canvasWrapper.style.padding = "10px";
-          const canvas = document.createElement("canvas");
-          canvas.height = 70;
-          canvasWrapper.appendChild(canvas);
-          seccion.appendChild(canvasWrapper);
-
-          const meses = contenido.map(item => item.mes);
-          const montos = contenido.map(item => {
-            let valor = parseFloat(String(item.monto).replace(",", ".").replace("€", "").trim());
-            return isNaN(valor) ? 0 : valor;
-          });
-
-          if (graficoFactura) graficoFactura.destroy();
-          graficoFactura = new Chart(canvas, {
-            type: 'bar',
-            data: {
-              labels: meses,
-              datasets: [{
-                label: 'Factura mensual (€)',
-                data: montos,
-                backgroundColor: 'rgba(255, 159, 64, 0.7)',
-                borderColor: 'rgba(255, 159, 64, 1)',
-                borderWidth: 1
-              }]
-            },
-            options: {
-              responsive: true,
-              plugins: {
-                datalabels: {
-                  anchor: 'end',
-                  align: 'end',
-                  color: '#333',
-                  font: { weight: 'bold' },
-                  formatter: value => value.toFixed(2) + " €"
-                },
-                legend: { display: false }
-              },
-              scales: {
-                x: { ticks: { color: '#333' }, grid: { display: false } },
-                y: {
-                  ticks: {
-                    color: '#333',
-                    callback: val => val + " €"
-                  },
-                  grid: { color: '#eee' }
-                }
-              }
-            },
-            plugins: [ChartDataLabels]
-          });
+        const renove = buscarClave(item, "renove");
+        if (renove && Array.isArray(renove) && renove.length) {
+          const renoveDiv = document.createElement("div");
+          renoveDiv.className = "detalle";
+          renoveDiv.innerHTML = `<strong>Renove:</strong> <span class="renove-highlight">${renove.join(", ")}</span>`;
+          card.appendChild(renoveDiv);
+        } else {
+          const renoveDiv = document.createElement("div");
+          renoveDiv.className = "detalle";
+          renoveDiv.innerHTML = `<strong>Renove:</strong> Ninguno`;
+          card.appendChild(renoveDiv);
         }
 
-        if (campo === "factura_detalle") {
-          const btnToggle = document.createElement("button");
-          btnToggle.className = "btn-toggle";
-          btnToggle.textContent = "Expandir/Colapsar Todo";
-          btnToggle.onclick = () => {
-            nodosFactura.forEach(({ chevron, children }) => {
-              const isOpen = children.classList.contains("open");
-              children.classList.toggle("open");
-              chevron.textContent = isOpen ? "▶" : "▼";
-            });
-          };
-          seccion.appendChild(btnToggle);
+        const descuentos = buscarClave(item, "descuentos") || [];
+        const descuentosDiv = document.createElement("div");
+        descuentosDiv.className = "detalle";
+        descuentosDiv.innerHTML = `<strong>Descuentos:</strong> <span class="descuento-highlight">${Array.isArray(descuentos) && descuentos.length ? descuentos.join(", ") : "Ninguno"}</span>`;
+        card.appendChild(descuentosDiv);
 
-          checkboxesFactura = [];
-          contenido.forEach(item => {
-            const nodo = renderFacturaDetalle(item, 0);
-            seccion.appendChild(nodo);
-          });
+        const consumo = "No disponible"; // Placeholder, adjust based on data
+        const permanencia = "02/03/2026"; // Example, adjust based on data
+        const ventaPlazos = "Sin VAPs"; // Example, adjust based on data
 
-          let totalInicial = 0;
-          checkboxesFactura.forEach(cb => {
-            totalInicial += parseFloat(cb.dataset.monto) || 0;
-          });
+        const detallesDiv = document.createElement("div");
+        detallesDiv.className = "detalle";
+        detallesDiv.innerHTML = `
+          <strong>Consumo:</strong> ${consumo}<br>
+          <strong>Permanencia:</strong> ${permanencia}<br>
+          <strong>Venta a Plazos:</strong> ${ventaPlazos}
+        `;
+        card.appendChild(detallesDiv);
 
-          const totalDiv = document.createElement("div");
-          totalDiv.id = "totalFacturaDesglosada";
-          totalDiv.className = "detalle";
-          totalDiv.style.fontWeight = "bold";
-          totalDiv.style.marginTop = "10px";
-          totalDiv.innerHTML = `💶 Total factura desglosada: ${totalInicial.toFixed(2)} € <br><br><br>`;
-          seccion.appendChild(totalDiv);
-
-          const additionalChargeInputDiv = document.createElement("div");
-          additionalChargeInputDiv.id = "additionalChargeInput";
-          additionalChargeInputDiv.style.marginTop = "10px";
-          additionalChargeInputDiv.className = "detalle";
-          additionalChargeInputDiv.innerHTML = `
-            <label for="additionalCharge">➕ Cargo Adicional (€):</label>
-            <input type="number" id="additionalCharge" value="0" min="0" step="0.01">
-            <button id="calcularTotalBtn" class="nif-btn" style="margin-left: 10px;">Calcular Total</button>
-          `;
-          seccion.appendChild(additionalChargeInputDiv);
-
-          const finalTotalDiv = document.createElement("div");
-          finalTotalDiv.id = "totalFacturaConAdicional";
-          finalTotalDiv.style.marginTop = "10px";
-          finalTotalDiv.style.fontWeight = "bold";
-          finalTotalDiv.className = "detalle";
-          finalTotalDiv.textContent = `💶 Total con cargos adicionales: ${totalInicial.toFixed(2)} €`;
-          seccion.appendChild(finalTotalDiv);
-
-          const checkButton = () => {
-            const calculateButton = document.getElementById("calcularTotalBtn");
-            if (calculateButton) {
-              calculateButton.addEventListener("click", () => {
-                console.log("Botón 'Calcular Total' clicado");
-                recalcularTotalFactura();
-              });
-            } else {
-              console.error("Botón 'calcularTotalBtn' no encontrado en el DOM, reintentando...");
-              setTimeout(checkButton, 100);
-            }
-          };
-          checkButton();
-        }
-
-        if (campo === "servicios") {
-          contenido.forEach(item => {
-            const card = document.createElement("div");
-            card.className = "servicio-card";
-
-            const tituloCard = document.createElement("strong");
-            tituloCard.textContent = "📱 " + (data.Plan || "Tipo desconocido");
-            card.appendChild(tituloCard);
-
-            if (item.etiquetas) {
-              item.etiquetas.split("|").map(e => e.trim()).forEach(et => {
-                const badge = document.createElement("span");
-                badge.className = "badge";
-                badge.textContent = et;
-                card.appendChild(badge);
-              });
-            }
-
-            if (item.numero) {
-              const numero = document.createElement("div");
-              numero.className = "detalle";
-              const span = document.createElement("span");
-              span.className = "numero-grande";
-              span.textContent = item.numero;
-
-              const botonCopiar = document.createElement("button");
-              botonCopiar.textContent = "📋";
-              botonCopiar.className = "copy-btn";
-              botonCopiar.onclick = () => {
-                navigator.clipboard.writeText(item.numero);
-                botonCopiar.textContent = "✅";
-                setTimeout(() => { botonCopiar.textContent = "📋"; }, 1500);
-              };
-
-              numero.appendChild(span);
-              numero.appendChild(botonCopiar);
-              card.appendChild(numero);
-            }
-
-            if (item.activo_desde) {
-              const activo = divTexto(`<strong class="descriptor">📅</strong> ${item.activo_desde}`);
-              activo.style.marginTop = "6px";
-              card.appendChild(activo);
-            }
-
-            if (item.detalles) {
-              item.detalles
-                .split("|")
-                .map(det => det.trim())
-                .filter(det => !/compromisos/i.test(det) && !/consumo/i.test(det) && !/permanencia/i.test(det) && !/venta a plazos/i.test(det))
-                .forEach((det, i) => {
-                  let textoDetalle = det.toLowerCase().includes("dirección del servicio fijo")
-                    ? `<strong class="descriptor">🏠 Dirección del servicio fijo:</strong> ${det.replace(/\n/g, ": ")}`
-                    : `<strong class="descriptor">📋 Detalle:</strong> ${det.replace(/\n/g, ": ")}`;
-                  const detalle = divTexto(textoDetalle);
-                  if (i === 0) detalle.style.marginTop = "6px";
-                  card.appendChild(detalle);
-                });
-            }
-
-            const extrasBox = document.createElement("div");
-            extrasBox.className = "extras-box";
-            const extrasTitle = document.createElement("div");
-            extrasTitle.style.marginBottom = "6px";
-            extrasBox.appendChild(extrasTitle);
-
-            const renove = buscarClave(item, "Renove");
-            const descuentos = buscarClave(item, "Bonos y Descuen.");
-            const textoExtras = `
-              <strong class="descriptor">📦 Renove:</strong> <span class="renove-highlight">${Array.isArray(renove) && renove.length ? renove.join(", ") : "Ninguno"}</span><br><br>
-              <strong class="descriptor">🎁 Descuentos:</strong> <span class="descuento-highlight">${Array.isArray(descuentos) && descuentos.length ? descuentos.join(", ") : "Ninguno"}</span>
-            `;
-
-            const extrasDetalle = document.createElement("div");
-            extrasDetalle.className = "detalle";
-            extrasDetalle.innerHTML = textoExtras;
-            extrasBox.appendChild(extrasDetalle);
-            card.appendChild(extrasBox);
-
-            const detallesBox = document.createElement("div");
-            detallesBox.className = "extras-box";
-            detallesBox.style.marginTop = "10px";
-
-            const detallesTitle = document.createElement("div");
-            detallesTitle.style.marginBottom = "6px";
-            detallesBox.appendChild(detallesTitle);
-
-            const detallesContenido = document.createElement("div");
-            detallesContenido.className = "detalle";
-
-            const activoDesde = item.activo_desde || "-";
-            const detallesTexto = item.detalles || "";
-            const extraerCampo = (clave) => {
-              if (!detallesTexto) return "No disponible";
-              const secciones = detallesTexto.split("|").map(s => s.trim());
-              for (let s of secciones) {
-                const [k, ...resto] = s.split("\n");
-                if (k.toLowerCase().includes(clave.toLowerCase())) {
-                  return resto.join("\n").trim() || "No disponible";
-                }
-              }
-              return "No disponible";
-            };
-
-            const consumo = detallesLineasMap[item.numero]?.consumo || extraerCampo("consumo");
-            const permanencia = detallesLineasMap[item.numero]?.permanencia || extraerCampo("permanencia");
-            const ventaPlazos = detallesLineasMap[item.numero]?.plazos || extraerCampo("venta a plazos");
-            const dispositivoExtra = detallesLineasMap[item.numero]?.dispositivos || "-";
-
-            detallesContenido.innerHTML = `
-              <strong class="descriptor">📊 Consumo:</strong> ${consumo}<br>
-              <strong class="descriptor">⏳ Permanencia:</strong> ${permanencia}<br>
-              <strong class="descriptor">💰 Venta a Plazos:</strong> ${ventaPlazos}<br>
-              <strong class="descriptor">📱 Dispositivo en Uso:</strong> ${dispositivoExtra !== "-" ? dispositivoExtra : "No disponible"}<br>
-            `;
-
-            detallesBox.appendChild(detallesContenido);
-            card.appendChild(detallesBox);
-
-            if (data.compromisos) {
-              try {
-                const compromisos = JSON.parse(data.compromisos);
-                const relacionados = compromisos.filter(c => c.id === item.numero);
-                if (relacionados.length > 0) {
-                  relacionados.forEach(comp => {
-                    const compromisoBox = document.createElement("div");
-                    compromisoBox.className = "extras-box";
-                    compromisoBox.style.marginTop = "10px";
-
-                    const compromisoTitle = document.createElement("div");
-                    compromisoTitle.style.marginBottom = "6px";
-                    compromisoBox.appendChild(compromisoTitle);
-
-                    const compromisoDetalle = document.createElement("div");
-                    compromisoDetalle.className = "detalle";
-                    compromisoDetalle.innerHTML = `
-                      <strong class="descriptor">📝 Motivo:</strong> ${comp.motivo || "Sin motivo"}<br>
-                      <strong class="descriptor">⏳ Periodo:</strong> ${comp.f_inicio || "?"} → ${comp.f_fin || "?"}<br>
-                      <strong class="descriptor">📆 Duración:</strong> ${comp.duracion || "-"}<br>
-                      <strong class="descriptor">📄 Resan:</strong> ${comp.resumen || "-"}
-                    `;
-                    compromisoBox.appendChild(compromisoDetalle);
-
-                    card.appendChild(compromisoBox);
-                  });
-                }
-              } catch (e) {
-                console.warn("Error al parsear compromisos", e);
-              }
-            }
-
-            seccion.appendChild(card);
-          });
-        }
-
-      } catch (e) {
-        seccion.innerHTML += `<p style="color:red;">⚠️ Error al interpretar ${campo}</p>`;
-      }
-      contenedor.appendChild(seccion);
+        contenedor.appendChild(card);
+      });
+    } catch (e) {
+      console.error('Error parsing servicios:', e);
     }
-  });
+  }
 }
 
 function buscarProfundamente(obj, clave, valorBuscado) {
