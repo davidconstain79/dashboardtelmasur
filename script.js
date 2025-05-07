@@ -29,6 +29,31 @@ function cargarTiendas() {
       })
     }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
   });
+
+  // To use a store CSV, uncomment and adjust the following:
+  /*
+  async function loadStoresCsv() {
+    try {
+      const response = await fetch('stores.csv');
+      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
+      const text = await response.text();
+      tiendas = Papa.parse(text, { header: true, skipEmptyLines: true, delimiter: ';' }).data;
+      tiendas.forEach(t => {
+        L.marker([parseFloat(t.lat), parseFloat(t.lng)], {
+          title: t.nombre,
+          icon: L.icon({
+            iconUrl: 'https://maps.gstatic.com/mapfiles/ms2/micons/red-dot.png',
+            iconSize: [32, 32],
+            iconAnchor: [16, 32]
+          })
+        }).addTo(map).bindPopup(`🏬 ${t.nombre}<br/>CP: ${t.cp}`);
+      });
+    } catch (error) {
+      console.error('Error al cargar stores.csv:', error.message);
+    }
+  }
+  loadStoresCsv();
+  */
 }
 
 // Load NIFs from pruebabase_procesado.csv
@@ -40,7 +65,7 @@ async function cargarNifs() {
       throw new Error(`HTTP error! Status: ${response.status}, URL: ${response.url}`);
     }
     const text = await response.text();
-    console.log('Contenido del CSV:', text.substring(0, 200)); // Log first 200 chars for debugging
+    console.log('Contenido del CSV (primeros 200 caracteres):', text.substring(0, 200));
     const parsed = Papa.parse(text, { 
       header: true, 
       skipEmptyLines: true, 
@@ -75,7 +100,7 @@ async function cargarNifs() {
     const datalist = document.getElementById('nifList');
     datalist.innerHTML = '';
     nifs.forEach(nif => {
-      const option = document.createElement(' on');
+      const option = document.createElement('option'); // Fixed typo
       option.value = nif;
       datalist.appendChild(option);
     });
@@ -134,7 +159,7 @@ async function cargarDatos(nif) {
               iconSize: [32, 32],
               iconAnchor: [16, 32]
             })
-          }).addTo(map).bindPopup(`📍 Cliente: ${info.nombre}<br/>CP: ${cp}`);
+          }).addTo(map).bindPopup(`📍 Cliente: ${info.nombre || 'Sin nombre'}<br/>CP: ${cp}`);
           map.setView([lat, lon], 12);
         } else {
           console.warn(`No se encontraron coordenadas para CP: ${cp}`);
@@ -145,6 +170,11 @@ async function cargarDatos(nif) {
     }
 
     // Update billing chart
+    if (typeof Chart === 'undefined') {
+      console.error('Chart.js no está cargado. Asegúrese de incluir la librería en index.html.');
+      document.getElementById('output').innerHTML = '<p>Error: Chart.js no está disponible.</p>';
+      return;
+    }
     const factura = JSON.parse(datos.factura || '[]');
     const ctx = document.createElement('canvas');
     document.getElementById('output').innerHTML = '';
@@ -155,7 +185,7 @@ async function cargarDatos(nif) {
         labels: factura.map(f => f.mes),
         datasets: [{
           label: 'Facturación (€)',
-          data: factura.map(f => parseFloat(f.monto.replace(' €', ''))),
+          data: factura.map(f => parseFloat(f.monto.replace(' €', '').replace(',', '.'))),
           backgroundColor: 'rgba(255, 99, 132, 0.2)',
           borderColor: 'rgba(255, 99, 132, 1)',
           borderWidth: 1
@@ -199,6 +229,7 @@ async function cargarPlanesUnicos() {
     console.log('Planes únicos:', uniquePlans);
 
     const planFilter = document.getElementById('planFilter');
+    planFilter.innerHTML = '<option value="">Todos los planes</option>'; // Add default option
     uniquePlans.forEach(plan => {
       const option = document.createElement('option');
       option.value = plan;
@@ -210,6 +241,7 @@ async function cargarPlanesUnicos() {
     uniquePlans = ["Love FUtbol 2", "Love Futbol Total 4 2024", "Love Cine y Series Total 4 2024"];
     console.log('Usando planes de prueba:', uniquePlans);
     const planFilter = document.getElementById('planFilter');
+    planFilter.innerHTML = '<option value="">Todos los planes</option>';
     uniquePlans.forEach(plan => {
       const option = document.createElement('option');
       option.value = plan;
@@ -250,6 +282,7 @@ async function filtrarPorPlan(plan) {
     } else {
       document.getElementById('nifInput').value = '';
       document.getElementById('clienteCard').innerHTML = '<p>No se encontraron clientes para este plan.</p>';
+      document.getElementById('output').innerHTML = '';
     }
   } catch (error) {
     console.error('Error al filtrar por plan:', error.message);
@@ -345,4 +378,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const plan = e.target.value;
     filtrarPorPlan(plan);
   });
+
+  // Add event listener for phone number search
+  const searchButton = document.getElementById('idSearchButton');
+  if (searchButton) {
+    searchButton.addEventListener('click', buscarIdEnServicios);
+  } else {
+    console.warn('Botón de búsqueda (idSearchButton) no encontrado. Asegúrese de incluirlo en index.html.');
+  }
 });
